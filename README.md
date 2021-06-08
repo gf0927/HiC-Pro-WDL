@@ -24,5 +24,5 @@ HiC-WDL
 
 ## mapped_hic_fragment:用mapped_2hic_fragments.py，根據bed file去對mapped出來的結果  
     main_input: .bed, merged_pairs.bam  
-    main_output: .validPairs  
+    main_output: .validPairs, SinglePairs等其他七項判定檔
 
