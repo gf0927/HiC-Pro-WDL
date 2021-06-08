@@ -1,7 +1,9 @@
 HiC-WDL
 ===
 ## 主文件：hic-docker.wdl, hic-docker.json  
-
+    目前進度(圖片中的紅框框部分)
+![image](https://github.com/gf0927/HiC-Pro-WDL/blob/main/hicpro%E6%B5%81%E7%A8%8B.png)
+    
 ### bowtie_global_mapping : 用bowtie2跑mapping  
     main_input : bowtie2index.tar檔( tar cvf打包), sample_r1.fastq, sample_r2.fastq  
     main_output: unmap:.unmap.fastq, mapped:.bam  
