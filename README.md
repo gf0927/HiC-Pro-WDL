@@ -1,4 +1,4 @@
-# HiC-WDL
+HiC-WDL
 ===
 主文件：hic-docker.wdl  
 * bowtie_global_mapping : 用bowtie2跑mapping  
