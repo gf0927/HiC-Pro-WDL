@@ -5,7 +5,8 @@ HiC-WDL
 ![image](https://github.com/gf0927/HiC-Pro-WDL/blob/main/hicpro%E6%B5%81%E7%A8%8B.png)
 
 ![image](https://github.com/gf0927/HiC-Pro-WDL/blob/main/WDL_%E6%B5%81%E7%A8%8B%E5%9C%962.png)
-    
+###### WDL流程圖
+
 ### bowtie_global_mapping : 用bowtie2跑mapping  
     main_input : bowtie2index.tar檔( tar cvf打包), sample_r1.fastq, sample_r2.fastq  
     main_output: unmap:.unmap.fastq, mapped:.bam  
