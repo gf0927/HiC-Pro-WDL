@@ -1,7 +1,7 @@
 HiC-WDL
 ===
-主文件：hic-docker.wdl  
----
+# 主文件：hic-docker.wdl  
+
 ## bowtie_global_mapping : 用bowtie2跑mapping  
     main_input : bowtie2index.tar檔( tar cvf打包), sample_r1.fastq, sample_r2.fastq  
     main_output: unmap:.unmap.fastq, mapped:.bam  
