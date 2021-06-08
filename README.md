@@ -1,7 +1,7 @@
 HiC-WDL
 ===
 ## 主文件：hic-docker.wdl, hic-docker.json  
-    目前進度(圖片中的紅框框部分)
+    目前進度(圖片中的紅框框部分，也是最花時間的)
 ![image](https://github.com/gf0927/HiC-Pro-WDL/blob/main/hicpro%E6%B5%81%E7%A8%8B.png)
     
 ### bowtie_global_mapping : 用bowtie2跑mapping  
