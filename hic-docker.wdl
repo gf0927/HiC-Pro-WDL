@@ -1,5 +1,7 @@
 version 1.0
+
 workflow hic_docker{
+    
     input {
         #Setting
         String docker_image
@@ -7,8 +9,8 @@ workflow hic_docker{
         String BOWTIE2_GLOBAL_OPTIONS
         String BOWTIE2_LOCAL_OPTIONS
 
-        Int N_cpu
-        Int N_mem
+        String N_cpu
+        String N_mem
 
         String cutsite
 
@@ -143,13 +145,13 @@ task bowtie_global_mapping {
         String REFERENCE_GENOME
         String BOWTIE2_GLOBAL_OPTIONS
         String odir
-        Int bwt_cpu
+        String bwt_cpu
         File BOWTIE2_tarfile_tem
         String BOWTIE2_IDX
         File SAMPLE_R1
         File SAMPLE_R2
         String docker_image
-        Int task_mem
+        String task_mem
 
     }
     String ldir = odir+"/logs"
@@ -157,17 +159,19 @@ task bowtie_global_mapping {
     command {
         mkdir ./output
         mkdir ./output/logs
+        date > ./output/logs/time.log
         tar xvf ${BOWTIE2_tarfile_tem}
         echo "##HiC-Pro mapping" > ./output/logs/${sample_name}_r1_bowtie2.log
         echo "##HiC-Pro mapping" > ./output/logs/${sample_name}_r2_bowtie2.log
         bowtie2 ${BOWTIE2_GLOBAL_OPTIONS} --un ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap.fastq --rg-id BMG --rg SM:${sample_name}_r1 -p ${bwt_cpu} -x ${REFERENCE_GENOME}/${REFERENCE_GENOME} -U ${SAMPLE_R1} 2>> ./output/logs/${sample_name}_r1_bowtie2.log | samtools view -F 4 -bS - > ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.bam
         bowtie2 ${BOWTIE2_GLOBAL_OPTIONS} --un ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap.fastq --rg-id BMG --rg SM:${sample_name}_r2 -p ${bwt_cpu} -x ${REFERENCE_GENOME}/${REFERENCE_GENOME} -U ${SAMPLE_R2} 2>> ./output/logs/${sample_name}_r2_bowtie2.log | samtools view -F 4 -bS - > ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.bam
         rm -r ${REFERENCE_GENOME}
+        date >> ./output/logs/time.log
     }
     runtime {
         docker: docker_image
         cpu : bwt_cpu
-        memory : task_mem
+        memory : task_mem + "GB"
     }
     output {
         File gol_unmap = "./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap.fastq"
@@ -194,14 +198,15 @@ task bowtie_local_trimming {
     runtime {
         docker :docker_image
         cpu : task_cpu
-        memory : task_mem
+        memory : task_mem + "GB"
     }
     command {
         mkdir output
         mkdir output/logs
+        date > ./output/logs/time.log
         ${HiC_PATH}/scripts/cutsite_trimming --fastq ${gol_unmap_fastq1} --cutsite ${cutsite} --out ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap_trimmed.fastq > ./output/logs/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap_readsTrimming.log 2>&1
         ${HiC_PATH}/scripts/cutsite_trimming --fastq ${gol_unmap_fastq2} --cutsite ${cutsite} --out ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap_trimmed.fastq > ./output/logs/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap_readsTrimming.log 2>&1
-
+        date >> ./output/logs/time.log
     }
     output {
         File unmap_trimmed_r1="./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap_trimmed.fastq"
@@ -232,15 +237,17 @@ task bowtie_local_mapping {
     runtime {
         docker :docker_image
         cpu : task_cpu
-        memory :task_mem
+        memory :task_mem +"GB"
     }
     command {
         mkdir ./output
         mkdir ./output/logs
+        date > ./output/logs/time.log
         tar xvf ${bowtie2idx_tarfile}
         bowtie2 ${BOWTIE2_LOCAL_OPTIONS} --rg-id BML --rg SM:${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap -p ${task_cpu} -x ${REFERENCE_GENOME}/${REFERENCE_GENOME} -U ${unmap_trimmed_r1} 2>> ./output/logs/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap_bowtie2.log | samtools view -bS - > ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap_bwt2loc.bam
         bowtie2 ${BOWTIE2_LOCAL_OPTIONS} --rg-id BML --rg SM:${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap -p ${task_cpu} -x ${REFERENCE_GENOME}/${REFERENCE_GENOME} -U ${unmap_trimmed_r2} 2>> ./output/logs/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap_bowtie2.log | samtools view -bS - > ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap_bwt2loc.bam
         rm -r ${REFERENCE_GENOME}
+        date >> ./output/logs/time.log
     }
 
      output {
@@ -266,17 +273,20 @@ task mapping_combine {
     runtime {
         docker : docker_image
         cpu :task_cpu
-        memory :task_mem
+        memory :task_mem + "GB"
     }
     command {
         mkdir ./output
+        mkdir ./output/logs
+        mkdir ./tmp
+        date > ./output/logs/time.log
         samtools merge -@ 20 -n -f ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2merged.bam ${global_mapped_r1} ${local_mapped_r1}
         samtools merge -@ 20 -n -f ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2merged.bam ${global_mapped_r2} ${local_mapped_r2}
         samtools sort -@ 20 -n -T tmp/${sample_name}_r1_${REFERENCE_GENOME} -o ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2merged.sorted.bam ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2merged.bam
         samtools sort -@ 20 -n -T tmp/${sample_name}_r2_${REFERENCE_GENOME} -o ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2merged.sorted.bam ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2merged.bam
         mv ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2merged.sorted.bam ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2merged.bam
         mv ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2merged.sorted.bam ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2merged.bam
-
+        date >> ./output/logs/time.log
     }
 
     output {
@@ -299,12 +309,14 @@ task merge_pairs {
     runtime {
         docker : docker_image
         cpu : task_cpu
-        memory : task_mem
+        memory : task_mem +"GB"
     }
     command {
         mkdir ./output
+        mkdir ./output/logs
+        date > ./output/logs/time.log
         python ${HiC_PATH}/scripts/mergeSAM.py -q 0 -t -v -f ${merged_r1} -r ${merged_r2} -o ./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.bam
-
+        date >> ./output/logs/time.log
     }
     output {
         File bwt2pairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.bam"
@@ -324,11 +336,14 @@ task mapped_hic_fragments {
     runtime {
         docker : docker_image
         cpu : task_cpu
-        memory : task_mem
+        memory : task_mem + "GB"
     }
     command {
         mkdir ./output
+        mkdir ./output/logs
+        date > ./output/logs/time.log
         python ${HiC_PATH}/scripts/mapped_2hic_fragments.py -v -S -t 100 -m 100000 -s 100 -l 600 -a -f ${BED_FILE_PATH}/${BED_FILE_NAME} -r ${bwt2pairs} -o ./output
+        date >> ./output/logs/time.log
     }
 
 }
