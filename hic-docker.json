@@ -1,10 +1,10 @@
 {
-  "hic_docker.N_cpu": "1",
+  "hic_docker.N_cpu": "2",
   "hic_docker.N_mem": "4",
 
   "hic_docker.cutsite":"AAGCTAGCTT",
 
-  "hic_docker.docker_image": "hic_wdl",
+  "hic_docker.docker_image": "gf0927/hic_update_v1",
 
   "hic_docker.REFERENCE_GENOME": "hg19",
   "hic_docker.Sample_Name": "SRR400264_00",
@@ -12,15 +12,20 @@
 
   "hic_docker.HiC_PATH":"/HiC-Pro_3.0.0",
   
-  "hic_docker.OUTPUT_DATA_PATH": "/home/azureuser/HiC-Pro/output",
+  "hic_docker.OUTPUT_DATA_PATH": "/datadrive/outputs",
 
+  "hic_docker.Bowtie_idx_1":"/datadrive/input_files/btw2idx/hg19/hg19.1.bt2",
+  "hic_docker.Bowtie_idx_2":"/datadrive/input_files/btw2idx/hg19/hg19.2.bt2",
+  "hic_docker.Bowtie_idx_3":"/datadrive/input_files/btw2idx/hg19/hg19.3.bt2",
+  "hic_docker.Bowtie_idx_4":"/datadrive/input_files/btw2idx/hg19/hg19.4.bt2",
+  "hic_docker.Bowtie_idx_re1":"/datadrive/input_files/btw2idx/hg19/hg19.rev.1.bt2",
+  "hic_docker.Bowtie_idx_re2":"/datadrive/input_files/btw2idx/hg19/hg19.rev.2.bt2",
+  "hic_docker.Bowtie_makesh":"/datadrive/input_files/btw2idx/hg19/make_hg19.sh",
 
-
-  "hic_docker.Bowtie2Index_tarfile":"/home/azureuser/HiC-Pro/inputs/bowtie2index/hg19.tar",
   "hic_docker.Bowtie2Index_PATH": "/home/azureuser/HiC-Pro/inputs/bowtie2index/hg19/",
 
-  "hic_docker.Sample_r1": "/home/azureuser/HiC-Pro/inputs/test_data/dixon_2M/SRR400264_00_R1.fastq.gz",
-  "hic_docker.Sample_r2": "/home/azureuser/HiC-Pro/inputs/test_data/dixon_2M/SRR400264_00_R2.fastq.gz",
+  "hic_docker.Sample_r1": "/datadrive/input_files/fastq/test_data/dixon_2M/SRR400264_00_R1.fastq",
+  "hic_docker.Sample_r2": "/datadrive/input_files/fastq/test_data/dixon_2M/SRR400264_00_R2.fastq",
   "hic_docker.BED_FILE_PATH": "/HiC-Pro_3.0.0/annotation",
   "hic_docker.BED_FILE_NAME": "HindIII_resfrag_hg19.bed",
 
