@@ -24,12 +24,10 @@ workflow hic_docker{
         String Sample_Name
         String REFERENCE_GENOME
         String Bowtie2Index_PATH
-        String BED_FILE_NAME
-        String BED_FILE_PATH
 
         File Sample_r1
         File Sample_r2
-        #File BED_FILE
+        File BED_FILE
 
 
         File Bowtie_idx_1
@@ -131,8 +129,7 @@ workflow hic_docker{
         input:
             bwt2pairs = merge_pairs.bwt2pairs,
             HiC_PATH=HiC_PATH,
-            BED_FILE_NAME = BED_FILE_NAME,
-            BED_FILE_PATH = BED_FILE_PATH,
+            BED_FILE = BED_FILE,
             docker_image = docker_image,
             task_cpu = N_cpu,
             task_mem = N_mem
@@ -361,8 +358,7 @@ task mapped_hic_fragments {
     input {
         File bwt2pairs
         String HiC_PATH
-        String BED_FILE_NAME
-        String BED_FILE_PATH
+        File BED_FILE
         String docker_image
         Int task_cpu
         Int task_mem
@@ -376,7 +372,7 @@ task mapped_hic_fragments {
         mkdir ./output
         mkdir ./output/logs
         date > ./output/logs/time.log
-        python ${HiC_PATH}/scripts/mapped_2hic_fragments.py -v -S -t 100 -m 100000 -s 100 -l 600 -a -f ${BED_FILE_PATH}/${BED_FILE_NAME} -r ${bwt2pairs} -o ./output
+        python ${HiC_PATH}/scripts/mapped_2hic_fragments.py -v -S -t 100 -m 100000 -s 100 -l 600 -a -f ${BED_FILE} -r ${bwt2pairs} -o ./output
         date >> ./output/logs/time.log
     }
 
