@@ -1,6 +1,6 @@
 version 1.0
 
-workflow hic_docker{
+workflow hic_docker {
     
     input {
         #Setting
