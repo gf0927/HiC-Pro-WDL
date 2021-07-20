@@ -11,6 +11,7 @@ RUN apt-get update \
   unzip \
   bzip2 \
   gcc \
+  libtbb2 \
   g++ && apt-get clean
 
 
