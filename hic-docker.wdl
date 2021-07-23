@@ -375,5 +375,16 @@ task mapped_hic_fragments {
         python ${HiC_PATH}/scripts/mapped_2hic_fragments.py -v -S -t 100 -m 100000 -s 100 -l 600 -a -f ${BED_FILE} -r ${bwt2pairs} -o ./output
         date >> ./output/logs/time.log
     }
+    output {
+        File bam_validpairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs_interaction.bam"
+        File validPairs =  "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.validPairs"
+        File DEPairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.DEPairs"
+        File DumpedPairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.DumpPairs"
+        File FiltPairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.FiltPairs"
+        File REPairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.REPairs"
+        File SinglePairs ="./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.SinglePairs"
+        File SCPairs = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.SCPairs"
+        File RSstat = "./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.RSstat"
+    }
 
 }
