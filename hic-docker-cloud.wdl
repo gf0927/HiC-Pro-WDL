@@ -23,12 +23,11 @@ workflow hic_docker {
         #inputs
         String Sample_Name
         String REFERENCE_GENOME
-        String Bowtie2Index_PATH
+        File bowtie_idx_path
 
         File Sample_r1
         File Sample_r2
         File BED_FILE
-
 
         File Bowtie_idx_1
         File Bowtie_idx_2
@@ -37,7 +36,6 @@ workflow hic_docker {
         File Bowtie_idx_re1
         File Bowtie_idx_re2
         File Bowtie_makesh
-
     }
 
     # call unzip_bowtie2index {
@@ -60,7 +58,7 @@ workflow hic_docker {
             REFERENCE_GENOME = REFERENCE_GENOME,
             BOWTIE2_GLOBAL_OPTIONS = BOWTIE2_GLOBAL_OPTIONS,
             odir = OUTPUT_DATA_PATH,
-            BOWTIE2_IDX = Bowtie2Index_PATH,
+            bowtie_idx_path = bowtie_idx_path,
             SAMPLE_R1 = Sample_r1,
             SAMPLE_R2 = Sample_r2,
             bwt_cpu = N_cpu,
@@ -83,8 +81,8 @@ workflow hic_docker {
 
     call bowtie_local_mapping{
         input:
-            unmap_trimmed_r1=bowtie_local_trimming.unmap_trimmed_r1,
-            unmap_trimmed_r2=bowtie_local_trimming.unmap_trimmed_r2,
+            unmap_trimmed_r1 = bowtie_local_trimming.unmap_trimmed_r1,
+            unmap_trimmed_r2 = bowtie_local_trimming.unmap_trimmed_r2,
             bowtie_idx_1 = Bowtie_idx_1,
             bowtie_idx_2 = Bowtie_idx_2,
             bowtie_idx_3 = Bowtie_idx_3,
@@ -92,6 +90,7 @@ workflow hic_docker {
             bowtie_idx_re1 = Bowtie_idx_re1,
             bowtie_idx_re2 = Bowtie_idx_re2,
             bowtie_makesh = Bowtie_makesh,
+            bowtie_idx_path = bowtie_idx_path,
             sample_name  = Sample_Name,
             task_cpu = N_cpu,
             REFERENCE_GENOME = REFERENCE_GENOME,
@@ -165,7 +164,7 @@ task bowtie_global_mapping {
         String BOWTIE2_GLOBAL_OPTIONS
         String odir
         String bwt_cpu
-        String BOWTIE2_IDX
+        File bowtie_idx_path
         File SAMPLE_R1
         File SAMPLE_R2
         String docker_image
@@ -177,19 +176,15 @@ task bowtie_global_mapping {
         File bowtie_idx_re1
         File bowtie_idx_re2
         File bowtie_makesh
-
     }
-    String ldir = odir+"/logs"
-    String bowtie_idx_path = "../inputs/1446856593/"+REFERENCE_GENOME
-    #String odir = odir+"/bowtie_results/bwt2_global/dixon_2M"
     command {
         mkdir ./output
         mkdir ./output/logs
         date > ./output/logs/time.log
         echo "##HiC-Pro mapping" > ./output/logs/${sample_name}_r1_bowtie2.log
         echo "##HiC-Pro mapping" > ./output/logs/${sample_name}_r2_bowtie2.log
-        bowtie2 ${BOWTIE2_GLOBAL_OPTIONS} --un ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap.fastq --rg-id BMG --rg SM:${sample_name}_r1 -p ${bwt_cpu} -x ${BOWTIE2_IDX} -U ${SAMPLE_R1} 2>> ./output/logs/${sample_name}_r1_bowtie2.log | samtools view -F 4 -bS - > ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.bam
-        bowtie2 ${BOWTIE2_GLOBAL_OPTIONS} --un ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap.fastq --rg-id BMG --rg SM:${sample_name}_r2 -p ${bwt_cpu} -x ${BOWTIE2_IDX} -U ${SAMPLE_R2} 2>> ./output/logs/${sample_name}_r2_bowtie2.log | samtools view -F 4 -bS - > ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.bam
+        bowtie2 ${BOWTIE2_GLOBAL_OPTIONS} --un ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.unmap.fastq --rg-id BMG --rg SM:${sample_name}_r1 -p ${bwt_cpu} -x ${bowtie_idx_path} -U ${SAMPLE_R1} 2>> ./output/logs/${sample_name}_r1_bowtie2.log | samtools view -F 4 -bS - > ./output/${sample_name}_r1_${REFERENCE_GENOME}.bwt2glob.bam
+        bowtie2 ${BOWTIE2_GLOBAL_OPTIONS} --un ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.unmap.fastq --rg-id BMG --rg SM:${sample_name}_r2 -p ${bwt_cpu} -x ${bowtie_idx_path} -U ${SAMPLE_R2} 2>> ./output/logs/${sample_name}_r2_bowtie2.log | samtools view -F 4 -bS - > ./output/${sample_name}_r2_${REFERENCE_GENOME}.bwt2glob.bam
         rm -r ${REFERENCE_GENOME}
         date >> ./output/logs/time.log
     }
@@ -252,7 +247,7 @@ task bowtie_local_mapping {
         File bowtie_idx_re1
         File bowtie_idx_re2
         File bowtie_makesh
-
+        File bowtie_idx_path
 
         String BOWTIE2_LOCAL_OPTIONS
 
@@ -270,7 +265,6 @@ task bowtie_local_mapping {
         cpu : task_cpu
         memory :task_mem +"GB"
     }
-    String bowtie_idx_path = "../inputs/1446856593/"+REFERENCE_GENOME
     command {
         mkdir ./output
         mkdir ./output/logs
@@ -346,7 +340,7 @@ task merge_pairs {
         mkdir ./output
         mkdir ./output/logs
         date > ./output/logs/time.log
-        python ${HiC_PATH}/scripts/mergeSAM.py -q 0 -t -v -f ${merged_r1} -r ${merged_r2} -o ./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.bam
+        python3 ${HiC_PATH}/scripts/mergeSAM.py -q 0 -t -v -f ${merged_r1} -r ${merged_r2} -o ./output/${sample_name}_${REFERENCE_GENOME}.bwt2pairs.bam
         date >> ./output/logs/time.log
     }
     output {
@@ -372,7 +366,7 @@ task mapped_hic_fragments {
         mkdir ./output
         mkdir ./output/logs
         date > ./output/logs/time.log
-        python ${HiC_PATH}/scripts/mapped_2hic_fragments.py -v -S -t 100 -m 100000 -s 100 -l 600 -a -f ${BED_FILE} -r ${bwt2pairs} -o ./output
+        python3 ${HiC_PATH}/scripts/mapped_2hic_fragments.py -v -S -t 100 -m 100000 -s 100 -l 600 -a -f ${BED_FILE} -r ${bwt2pairs} -o ./output
         date >> ./output/logs/time.log
     }
 
