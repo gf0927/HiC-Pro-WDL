@@ -342,6 +342,11 @@ task mapped_hic_fragments {
             -f ~{bed_file} \
             -r ~{bwt2pairs} \
             -o ./output
+        LANG=en; sort \
+            -T tmp \
+            -k2,2V -k3,3n -k5,5V -k6,6n \
+            -o ./output/~{sample_name}_~{ref_genome}.bwt2pairs.validPairs \
+            ./output/~{sample_name}_~{ref_genome}.bwt2pairs.validPairs
         date >> ./output/logs/time.log
     }
     output {
