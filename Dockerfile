@@ -11,7 +11,6 @@ RUN apt-get update \
   unzip \
   bzip2 \
   gcc \
-  libtbb2 \
   g++ && apt-get clean
 
 
@@ -25,13 +24,13 @@ ENV PATH /usr/local/anaconda/bin:$PATH
 ## Install all dependencies using conda
 COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
-ENV PATH /usr/local/anaconda/envs/HiC-Pro_v3.0.0/bin:$PATH
+ENV PATH /usr/local/anaconda/envs/HiC-Pro_v3.1.0/bin:$PATH
 
 ## Install HiCPro
 RUN cd /tmp && \
-    echo "devel.zip" | wget --base=http://github.com/nservant/HiC-Pro/archive/ -i - -O hicpro_latest.zip && \
+    echo "master.zip" | wget --base=http://github.com/nservant/HiC-Pro/archive/ -i - -O hicpro_latest.zip && \
     unzip hicpro_latest.zip && \
-    cd HiC-Pro-devel  && \ 
+    cd HiC-Pro-master  && \ 
     make configure prefix=/ && \
     make install && \
     cd .. && \
