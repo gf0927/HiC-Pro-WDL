@@ -16,6 +16,7 @@ workflow Hic_Docker {
 
         #inputs
         String sampleName
+        String resName
         String referenceGenome
         File bowtieIndexPath
         File sampleR1
@@ -353,7 +354,7 @@ task Mapping_Stat {
         cpu : dockerCPU
         memory : dockerMEM + "GB"
     }
-    
+
     command {
         set -e -o pipefail
         mkdir ./output
@@ -479,6 +480,47 @@ task Mapped_Hic_Fragments {
     }
 }
 
+task Merge_Valid_Interaction {
+    input {
+        File validPairs
+        String dockerImage
+        String dockerCPU
+        String dockerMEM
+        String resName
+    }
+
+    runtime {
+        docker : dockerImage
+        cpu : dockerCPU
+        memory : dockerMEM + "GB"
+    }
+
+    command {
+        set -e -o pipefail
+        mkdir ./output
+        mkdir ./tmp
+        LANG=en; sort -T ./tmp -S 50% -k2,2V -k3,3n -k5,5V -k6,6n -m ~{IN_DIR}/~{resName}/*.validPairs | \
+        awk -F\"\t\" 'BEGIN{c1=0;c2=0;s1=0;s2=0}(c1!=~2 || c2!=~5 || s1!=~3 || s2!=~6){print;c1=~2;c2=~5;s1=~3;s2=~6}' > ./output/~{resName}.allValidPairs
+        echo -e -n "valid_interaction\t" > ./output/~{sampleName}_allValidPairs.mergestat
+        cat ~{validPairs} | wc -l >> ./output/~{sampleName}_allValidPairs.mergestat
+        echo -e -n "valid_interaction_rmdup\t" >> ./output/~{sampleName}_allValidPairs.mergestat
+        cat ./output/*.allValidPairs | wc -l >> ./output/~{sampleName}_allValidPairs.mergestat
+        echo -e -n "trans_interaction\t" >> ./output/~{sampleName}_allValidPairs.mergestat
+        awk 'BEGIN{cis=0;trans=0;sr=0;lr=0} \
+            ~2 == ~5 \
+            {cis=cis+1; d=~6>~3?~6-~3:~3-~6; \
+            if (d<=20000){sr=sr+1}else{lr=lr+1}} \
+            ~2!=~5{trans=trans+1}\
+            END{print "trans_interaction\t"trans"\ncis_interaction\t"cis"\ncis_shortRange\t"sr"\ncis_longRange\t"lr}' \
+            ./output/~{resName}.allValidPairs >> ./output/~{resName}_allValidPairs.mergestat
+
+    }
+
+    output {
+
+    }
+}
+
 task Build_Matrix {
     input {
         File allValidPairs
@@ -513,4 +555,27 @@ task Build_Matrix {
         File matrix = "./output/~{sampleName}_~{binSize}.matrix"
         File abs_bed = "./output/~{sampleName}_~{binSize}_abs.bed"
     }
+}
+
+task Making_Plot {
+    input {
+        String resName
+        String dockerCPU
+        String dockerMEM
+    }
+
+    command {
+
+    }
+
+    runtime {
+        docker : dockerImage
+        cpu : dockerCPU
+        memory : dockerMEM + "GB"
+    }
+
+    output {
+
+    }
+
 }
