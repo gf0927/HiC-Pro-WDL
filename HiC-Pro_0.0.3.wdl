@@ -126,7 +126,27 @@ workflow Hic_Docker {
             dockerMEM = nMem,
             binSize = binSize,
             sampleName = sampleName
+    }
 
+    call Making_Plot {
+        input:
+            resName = resName,
+            dockerCPU = nCPU,
+            dockerMEM = nMem,
+            tagR1 = tagR1,
+            tagR2 = tagR2,
+            rmMulti = "1",
+            rmSingle = "1",
+    }
+
+    call Ice_Normalization {
+        input:
+            dockerImage = dockerImage,
+            dockerCPU = nCPU,
+            dockerMEM = nMem,
+            hicPath = hicPath,
+            sampleName = sampleName,
+            rawMatrix = Build_Matrix.matrix
     }
 }
 
@@ -354,7 +374,7 @@ task Mapping_Stat {
         cpu : dockerCPU
         memory : dockerMEM + "GB"
     }
-
+    
     command {
         set -e -o pipefail
         mkdir ./output
@@ -422,6 +442,7 @@ task Merge_Pairs {
 
     output {
         File bowtieMappedPairs = "./output/~{sampleName}_~{refGenome}.bwt2pairs.bam"
+        File pairStat = "./output/~{sampleName}_refGenome.bwt2pairs.pairstat"
     }
 }
 
@@ -501,11 +522,11 @@ task Merge_Valid_Interaction {
         mkdir ./tmp
         LANG=en; sort -T ./tmp -S 50% -k2,2V -k3,3n -k5,5V -k6,6n -m ~{IN_DIR}/~{resName}/*.validPairs | \
         awk -F\"\t\" 'BEGIN{c1=0;c2=0;s1=0;s2=0}(c1!=~2 || c2!=~5 || s1!=~3 || s2!=~6){print;c1=~2;c2=~5;s1=~3;s2=~6}' > ./output/~{resName}.allValidPairs
-        echo -e -n "valid_interaction\t" > ./output/~{sampleName}_allValidPairs.mergestat
-        cat ~{validPairs} | wc -l >> ./output/~{sampleName}_allValidPairs.mergestat
-        echo -e -n "valid_interaction_rmdup\t" >> ./output/~{sampleName}_allValidPairs.mergestat
-        cat ./output/*.allValidPairs | wc -l >> ./output/~{sampleName}_allValidPairs.mergestat
-        echo -e -n "trans_interaction\t" >> ./output/~{sampleName}_allValidPairs.mergestat
+        echo -e -n "valid_interaction\t" > ./output/~{resName}_allValidPairs.mergestat
+        cat ~{validPairs} | wc -l >> ./output/~{resName}_allValidPairs.mergestat
+        echo -e -n "valid_interaction_rmdup\t" >> ./output/~{resName}_allValidPairs.mergestat
+        cat ./output/*.allValidPairs | wc -l >> ./output/~{resName}_allValidPairs.mergestat
+        echo -e -n "trans_interaction\t" >> ./output/~{resName}_allValidPairs.mergestat
         awk 'BEGIN{cis=0;trans=0;sr=0;lr=0} \
             ~2 == ~5 \
             {cis=cis+1; d=~6>~3?~6-~3:~3-~6; \
@@ -517,7 +538,8 @@ task Merge_Valid_Interaction {
     }
 
     output {
-
+        File allValidPairs = "./output/~{resName}.allValidPairs"
+        File mergeStat = "./output/~{resName}_allValidPairs.mergestat"
     }
 }
 
@@ -562,9 +584,43 @@ task Making_Plot {
         String resName
         String dockerCPU
         String dockerMEM
-    }
+        String tagR1
+        String tagR2
+        String hicPath
+        String rmMulti #是否給出多端比對的結果，預設為1，不給
+        String rmSingle #是否給出單端比對的結果，預設為1，不給
 
+    }
+    
     command {
+        set -e -o pipefail
+        mkdir ./output
+        mkdir ./output/logs
+        R CMD BATCH \
+            --no-save \
+            --no-restore \
+            "--args picDir='./output' bwtDir='.' sampleName='~{resName}' r1tag='~{tagR1}' r2tag='~{tagR2}' " \
+            ~{hicPath}/scripts/plot_mapping_portion.R \
+            ./output/logs/plot_mapping_portion.Rout
+        
+        R CMD BATCH \
+            --no-save \
+            --no-restore \
+            "--args picDir='./output' bwtDir='.' sampleName='~{resName}' rmMulti='~{rmMulti}' rmSingle='~{rmSingle}'" \ 
+            ~{hicPath}/scripts/plot_pairing_portion.R \
+            ./output/logs/plot_pairing_portion.Rout
+        
+        R CMD BATCH \
+            --no-save \
+            --no-restore \
+            "--args picDir='./output' hicDir='${DATA_DIR}' sampleName='~{resName}'" \ 
+            ~{hicPath}/scripts/plot_hic_fragment.R \
+            ./output/logs/plot_hic_fragment.Rout
+        
+        R CMD BATCH --no-save --no-restore \
+            "--args picDir='./output' hicDir='${DATA_DIR}' statsDir='${STATS_DIR}' sampleName='~{resName}'" \
+            ~{hicPath}/scripts/plot_hic_contacts.R \
+            ./output/logs/plot_hic_contacts.Rout
 
     }
 
@@ -575,7 +631,47 @@ task Making_Plot {
     }
 
     output {
-
+        File = "./output/plotHiCContactRanges_~{resName}.pdf"
+        File = "./output/plotHiCFragment_~{resName}.pdf"
+        File = "./output/plotHiCFragmentSize_~{resName}.pdf"
+        File = "./output/plotMapping_~{resName}.pdf"
+        File = "./output/plotMappingPairing_~{resName}.pdf"
     }
 
+}
+
+task Ice_Normalization {
+    input {
+        String dockerImage
+        String dockerCPU
+        String dockerMEM
+        String hicPath
+        String sampleName
+        File rawMatrix
+    }
+
+    command {
+        set -e -o pipefail
+        mkdir ./output
+        python ~{hicPath}/scripts/ice \
+            --results_filename ./output/~{sampleName}_20000_iced.matrix\
+            --filter_low_counts_perc 0.02 \
+            --filter_high_counts_perc 0 \
+            --max_iter 100 \
+            --eps 0.1 \
+            --remove-all-zeros-loci \
+            --output-bias 1 \
+            --verbose 1 \
+            ~{rawMatrix}
+    }
+
+    runtime {
+        docker : dockerImage
+        cpu : dockerCPU
+        memory : dockerMEM + "GB"
+    }
+
+    output {
+        File icedMatrix = "./output/~{sampleName}_20000_iced.matrix"
+    }
 }
