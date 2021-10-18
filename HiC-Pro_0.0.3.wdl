@@ -637,26 +637,23 @@ task Making_Plot {
             --no-restore \
             "--args picDir='./output' bwtDir='./temDir' sampleName='~{resName}' r1tag='~{tagR1}' r2tag='~{tagR2}' " \
             ~{hicPath}/scripts/plot_mapping_portion.R \
-            ./plot_mapping_portion.Rout
+            ./output/logs/plot_mapping_portion.Rout
 
-        R CMD BATCH \
-            --no-save \
-            --no-restore \
-            "--args picDir='./output' bwtDir='./temDir' sampleName='~{resName}' rmMulti='~{rmMulti}' rmSingle='~{rmSingle}'" \ 
+        R CMD BATCH --no-save --no-restore \
+            "--args picDir='./output' bwtDir='./temDir' sampleName='~{resName}' rmMulti='~{rmMulti}' rmSingle='~{rmSingle}' " \
             ~{hicPath}/scripts/plot_pairing_portion.R \
-            ./plot_pairing_portion.Rout
-        
-        R CMD BATCH \
-            --no-save \
-            --no-restore \
-            "--args picDir='./output' hicDir='./temDir' sampleName='~{resName}'" \ 
-            ~{hicPath}/scripts/plot_hic_fragment.R \
-            ./plot_hic_fragment.Rout
+            ./output/logs/plot_pairing_portion.Rout
+
+        R CMD BATCH --no-save --no-restore \
+            "--args picDir='./output' hicDir='./temDir' sampleName='~{resName}'" \
+            ~{hicPath}/scripts/plot_hic_fragment.R  \
+            ./output/logs/plot_hic_fragment.Rout
+
         
         R CMD BATCH --no-save --no-restore \
             "--args picDir='./output' hicDir='./temDir' statsDir='./temDir' sampleName='~{resName}'" \
             ~{hicPath}/scripts/plot_hic_contacts.R \
-            ./plot_hic_contacts.Rout
+            ./output/logs/plot_hic_contacts.Rout
     >>>
 
     runtime {
