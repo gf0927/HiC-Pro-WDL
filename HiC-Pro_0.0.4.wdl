@@ -133,7 +133,7 @@ workflow Hic_Docker {
 
         call Build_Matrix {
             input:
-                allValidPairs = Mapped_Hic_Fragments.validPairs,
+                allValidPairs = Merge_Valid_Interaction.allValidPairs,
                 tableFile = tableFile,
                 hicPath = hicPath,
                 dockerImage = dockerImage,
