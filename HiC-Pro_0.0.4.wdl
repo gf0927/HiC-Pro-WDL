@@ -159,8 +159,8 @@ workflow Hic_Docker {
                 pairStat = Merge_Pairs.pairStat,
                 rsStat = Mapped_Hic_Fragments.RSstat,
                 mergeStat = Merge_Valid_Interaction.mergeStat,
-                validPairs = Mapped_Hic_Fragments.validPairs
-
+                validPairs = Mapped_Hic_Fragments.validPairs,
+                fakeFile = fakeFile
         }
 
         call Ice_Normalization {
@@ -626,11 +626,22 @@ task Making_Plot {
         File rsStat
         File mergeStat
         File validPairs
-
+        File fakeFile
     }
     
     command <<<
         set -e -o pipefail
+
+        mkdir ./~{sampleName}
+        cp ~{mappingStatR1} ./~{sampleName}
+        cp ~{mappingStatR2} ./~{sampleName}
+        cp ~{pairStat} ./~{sampleName}
+        cp ~{RSstat} ./~{sampleName}
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*_R1*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR1
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*_R2*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR2
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*.pairstat" -v > ./~{sampleName}/~{sampleName}.mPairStat
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*.RSstat"-v > ./~{sampleName}/~{sampleName}.mRSstat
+
         mkdir ./temDir
         mkdir ./output
         mkdir ./output/logs
