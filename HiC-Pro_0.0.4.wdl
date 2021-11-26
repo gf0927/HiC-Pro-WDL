@@ -159,8 +159,7 @@ workflow Hic_Docker {
                 pairStat = Merge_Pairs.pairStat,
                 rsStat = Mapped_Hic_Fragments.RSstat,
                 mergeStat = Merge_Valid_Interaction.mergeStat,
-                validPairs = Mapped_Hic_Fragments.validPairs,
-                fakeFile = fakeFile
+                validPairs = Mapped_Hic_Fragments.validPairs
         }
 
         call Ice_Normalization {
@@ -626,7 +625,6 @@ task Making_Plot {
         File rsStat
         File mergeStat
         File validPairs
-        File fakeFile
     }
     
     command <<<
@@ -668,7 +666,6 @@ task Making_Plot {
             ~{hicPath}/scripts/plot_hic_fragment.R  \
             ./output/logs/plot_hic_fragment.Rout
 
-        
         R CMD BATCH --no-save --no-restore \
             "--args picDir='./output' hicDir='./temDir' statsDir='./temDir' sampleName='~{sampleName}'" \
             ~{hicPath}/scripts/plot_hic_contacts.R \
