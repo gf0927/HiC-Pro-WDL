@@ -645,10 +645,10 @@ task Making_Plot {
         mkdir ./temDir
         mkdir ./output
         mkdir ./output/logs
-        cp ~{mappingStatR1} ./temDir
-        cp ~{mappingStatR2} ./temDir
-        cp ~{pairStat} ./temDir
-        cp ~{rsStat} ./temDir
+        cp ./~{sampleName}/~{sampleName}.mmapStatR1 ./temDir
+        cp ./~{sampleName}/~{sampleName}.mmapStatR2 ./temDir
+        cp ./~{sampleName}/~{sampleName}.mPairStat ./temDir
+        cp ./~{sampleName}/~{sampleName}.mRSstat ./temDir
         cp ~{mergeStat} ./temDir
         cp ~{validPairs} ./temDir
         R CMD BATCH \
