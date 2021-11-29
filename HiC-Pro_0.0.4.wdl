@@ -146,6 +146,7 @@ workflow Hic_Docker {
         call Making_Plot {
             input:
                 sampleName = inputSettings[idx][0],
+                refGenome=referenceGenome,
                 dockerCPU = nCPU,
                 dockerMEM = nMem,
                 dockerImage = dockerImage,
@@ -159,7 +160,7 @@ workflow Hic_Docker {
                 pairStat = Merge_Pairs.pairStat,
                 rsStat = Mapped_Hic_Fragments.RSstat,
                 mergeStat = Merge_Valid_Interaction.mergeStat,
-                validPairs = Mapped_Hic_Fragments.validPairs
+                validPairs = Merge_Valid_Interaction.allValidPairs
         }
 
         call Ice_Normalization {
@@ -189,8 +190,8 @@ task Bowtie_Global_Mapping {
 
     command {
         set -e -o pipefail
-        mkdir ./output
-        mkdir ./output/logs
+        mkdir -p ./output
+        mkdir -p ./output/logs
         date > ./output/logs/time.log
         echo "##HiC-Pro mapping" > ./output/logs/~{sampleName}_r1_bowtie2.log
         echo "##HiC-Pro mapping" > ./output/logs/~{sampleName}_r2_bowtie2.log
@@ -252,8 +253,8 @@ task Bowtie_Local_Trimming {
 
     command {
         set -e -o pipefail
-        mkdir output
-        mkdir output/logs
+        mkdir -p ./output
+        mkdir -p ./output/logs
         date > ./output/logs/time.log
         ~{hicPath}/scripts/cutsite_trimming \
             --fastq ~{globalUnmappedFastq1} \
@@ -294,8 +295,8 @@ task Bowtie_Local_Mapping {
 
     command {
         set -e -o pipefail
-        mkdir ./output
-        mkdir ./output/logs
+        mkdir -p ./output
+        mkdir -p ./output/logs
         date > ./output/logs/time.log
         bowtie2 ~{bowtie2LocalOptions} \
             --rg-id BML \
@@ -345,9 +346,9 @@ task Mapping_Combine {
 
     command {
         set -e -o pipefail
-        mkdir ./output
-        mkdir ./output/logs
-        mkdir ./tmp
+        mkdir -p ./output
+        mkdir -p ./output/logs
+        mkdir -p ./tmp
         date > ./output/logs/time.log
         samtools merge \
             -@ ~{dockerCPU} \
@@ -401,7 +402,7 @@ task Mapping_Stat {
     
     command {
         set -e -o pipefail
-        mkdir ./output
+        mkdir -p ./output
         echo "##~{sampleName}_R1_~{refGenome}.mapstat" > ./output/~{sampleName}_R1_~{refGenome}.mapstat
         echo -n -e "total\t" >> ./output/~{sampleName}_R1_~{refGenome}.mapstat
         samtools view -c ~{mappedMerged_R1} >> ./output/~{sampleName}_R1_~{refGenome}.mapstat
@@ -451,8 +452,8 @@ task Merge_Pairs {
 
     command {
         set -e -o pipefail
-        mkdir ./output
-        mkdir ./output/logs
+        mkdir -p ./output
+        mkdir -p ./output/logs
         date > ./output/logs/time.log
         python3 ~{hicPath}/scripts/mergeSAM.py \
             -q 0 \
@@ -490,8 +491,8 @@ task Mapped_Hic_Fragments {
 
     command <<<
         set -e -o pipefail
-        mkdir ./output
-        mkdir ./output/logs
+        mkdir -p ./output
+        mkdir -p ./output/logs
         date > ./output/logs/time.log
         python3 ~{hicPath}/scripts/mapped_2hic_fragments.py \
             -v \
@@ -544,16 +545,15 @@ task Merge_Valid_Interaction {
     command <<<
         set -e -o pipefail
 
-        rm ~{validPairs}/*.crc
-        cat ~{validPairs}/* > read.bam
+        cat ~{validPairs}/* > sample.bwt2pairs.validPairs
 
-        mkdir ./output
-        mkdir ./tmp
-        cp read.bam ./tmp
+        mkdir -p ./output
+        mkdir -p ./tmp
+        cp sample.bwt2pairs.validPairs ./tmp
         LANG=en; sort -T ./tmp -S 50% -k2,2V -k3,3n -k5,5V -k6,6n -m ./tmp/*.validPairs | \
         awk -F"\t" 'BEGIN{c1=0;c2=0;s1=0;s2=0}(c1!=$2 || c2!=$5 || s1!=$3 || s2!=$6){print;c1=$2;c2=$5;s1=$3;s2=$6}' > ./output/~{resName}.allValidPairs
         echo -e -n "valid_interaction\t" > ./output/~{resName}_allValidPairs.mergestat
-        cat read.bam | wc -l >> ./output/~{resName}_allValidPairs.mergestat
+        cat sample.bwt2pairs.validPairs | wc -l >> ./output/~{resName}_allValidPairs.mergestat
         echo -e -n "valid_interaction_rmdup\t" >> ./output/~{resName}_allValidPairs.mergestat
         cat ./output/*.allValidPairs | wc -l >> ./output/~{resName}_allValidPairs.mergestat
         awk 'BEGIN{cis=0;trans=0;sr=0;lr=0} \
@@ -592,7 +592,7 @@ task Build_Matrix {
 
     command {
         set -e -o pipefail
-        mkdir ./output
+        mkdir -p ./output
         cat ~{allValidPairs} | ~{hicPath}/scripts/build_matrix \
             --matrix-format upper \
             --binsize ~{binSize} \
@@ -618,6 +618,7 @@ task Making_Plot {
         String dockerImage
         String rmMulti #是否給出多端比對的結果，預設為1，不給
         String rmSingle #是否給出單端比對的結果，預設為1，不給
+        String refGenome
 
         File mappingStatR1
         File mappingStatR2
@@ -630,25 +631,25 @@ task Making_Plot {
     command <<<
         set -e -o pipefail
 
-        mkdir ./~{sampleName}
-        cp ~{mappingStatR1} ./~{sampleName}
-        cp ~{mappingStatR2} ./~{sampleName}
-        cp ~{pairStat} ./~{sampleName}
-        cp ~{RSstat} ./~{sampleName}
-        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*_R1*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR1
-        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*_R2*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR2
-        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*.pairstat" -v > ./~{sampleName}/~{sampleName}.mPairStat
-        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName} -p "*.RSstat"-v > ./~{sampleName}/~{sampleName}.mRSstat
+        mkdir -p ./~{sampleName}
+        cp -r ~{mappingStatR1} ./~{sampleName}
+        cp -r ~{mappingStatR2} ./~{sampleName}
+        cp -r ~{pairStat} ./~{sampleName}
+        cp -r ~{rsStat} ./~{sampleName}
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_R1_~{refGenome}.mapstat -p "*_R1*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR1
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_R2_~{refGenome}.mapstat -p "*_R2*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR2
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_~{refGenome}.bwt2pairs.pairstat -p "*.pairstat" -v > ./~{sampleName}/~{sampleName}.mPairStat
+        python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_~{refGenome}.bwt2pairs.RSstat -p "*.RSstat" -v > ./~{sampleName}/~{sampleName}.mRSstat
 
-        mkdir ./temDir
-        mkdir ./output
-        mkdir ./output/logs
-        cp ./~{sampleName}/~{sampleName}.mmapStatR1 ./temDir
-        cp ./~{sampleName}/~{sampleName}.mmapStatR2 ./temDir
-        cp ./~{sampleName}/~{sampleName}.mPairStat ./temDir
-        cp ./~{sampleName}/~{sampleName}.mRSstat ./temDir
-        cp ~{mergeStat} ./temDir
-        cp ~{validPairs} ./temDir
+        mkdir -p ./temDir
+        mkdir -p ./output
+        mkdir -p ./output/logs
+        cp ./~{sampleName}/~{sampleName}.mmapStatR1 ./temDir/~{sampleName}_R1_~{refGenome}.mapstat
+        cp ./~{sampleName}/~{sampleName}.mmapStatR2 ./temDir/~{sampleName}_R2_~{refGenome}.mapstat
+        cp ./~{sampleName}/~{sampleName}.mPairStat ./temDir/~{sampleName}_~{refGenome}.bwt2pairs.pairstat
+        cp ./~{sampleName}/~{sampleName}.mRSstat ./temDir/~{sampleName}_~{refGenome}.bwt2pairs.RSstat
+        cp -r ~{mergeStat} ./temDir/~{sampleName}.mergestat
+        cp -r ~{validPairs} ./temDir/~{sampleName}.validPairs
         R CMD BATCH \
             --no-save \
             --no-restore \
@@ -700,7 +701,7 @@ task Ice_Normalization {
 
     command {
         set -e -o pipefail
-        mkdir ./output
+        mkdir -p ./output
         python ~{hicPath}/scripts/ice \
             --results_filename ./output/~{sampleName}_20000_iced.matrix\
             --filter_low_counts_perc 0.02 \
