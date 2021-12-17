@@ -36,4 +36,5 @@ RUN cd /tmp && \
     cd .. && \
     rm -fr HiC-Pro*
 
+COPY normalizeStat.py /HiC-Pro_3.1.0/scripts/normalizeStat.py
 RUN /HiC-Pro_3.1.0/bin/HiC-Pro -h
