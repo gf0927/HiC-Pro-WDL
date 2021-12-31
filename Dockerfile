@@ -1,4 +1,4 @@
-FROM atgenomix.azurecr.io/0_runtime/seqslab_runtime-1.4_ubuntu-18.04:2021-12-09-05-43
+FROM atgenomix.azurecr.io/0_runtime/seqslab_runtime-1.4_ubuntu-18.04:2021-12-29-07-28
 ENV LANG=C.UTF-8 LC_ALL=C.UTF-8
 
 LABEL authors="Nicolas Servant" \
