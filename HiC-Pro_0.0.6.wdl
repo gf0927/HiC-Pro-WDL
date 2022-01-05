@@ -663,7 +663,7 @@ task Making_Plot {
         python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_R2_~{refGenome}.mapstat -p "*_R2*.mapstat" -v > ./~{sampleName}/~{sampleName}.mmapStatR2
         python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_~{refGenome}.bwt2pairs.pairstat -p "*.pairstat" -v > ./~{sampleName}/~{sampleName}.mPairStat
         python ~{hicPath}/scripts/merge_statfiles.py -d ./~{sampleName}/~{sampleName}_~{refGenome}.bwt2pairs.RSstat -p "*.RSstat" -v > ./~{sampleName}/~{sampleName}.mRSstat
-        python ~{hicPath}/scripts/normalizeStat.py -d ./~{sampleName} -p ".mPairStat" -v > ./temDir/~{sampleName}_~{refGenome}.bwt2pairs.pairstat
+        python ~{hicPath}/scripts/normalizeStat.py -d ./~{sampleName} -p "*.mPairStat" -v > ./temDir/~{sampleName}_~{refGenome}.bwt2pairs.pairstat
 
         cp ./~{sampleName}/~{sampleName}.mmapStatR1 ./temDir/~{sampleName}_R1_~{refGenome}.mapstat
         cp ./~{sampleName}/~{sampleName}.mmapStatR2 ./temDir/~{sampleName}_R2_~{refGenome}.mapstat
